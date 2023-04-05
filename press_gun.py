@@ -22,7 +22,7 @@ LIB = None  # 加载的DLL
 HANDLER = None  # 加载的句柄
 MOUSE_LEFT_DOWN = False  # 鼠标左键按下
 WORK = None  # 是否开启程序
-Y_NUMBER = 2  # 下压的Y轴像素值
+Y_NUMBER = 0  # 下压的Y轴像素值
 WIN = None  # tkinter界面
 LABEL_WORK = None  # 显示是否开启程序
 LABEL_Y_NUMBER = None  # 显示下压的Y轴像素值
@@ -43,7 +43,7 @@ def press_gun():
             time.sleep(0.02)
             continue
         # print("按下了鼠标左键, 需要压枪")
-        print(f"次数的下压册数:{PRESS_COUNT}")
+        # print(f"次数的下压册数:{PRESS_COUNT}")
         data1 = scar.scar_data1
         data2 = scar.scar_data2
         data3 = scar.scar_data3
