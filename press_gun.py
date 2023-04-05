@@ -6,6 +6,7 @@ from tkinter import Tk, Label, Frame
 
 import win32api
 import win32con
+from PIL import ImageGrab
 from pynput import mouse, keyboard
 from pynput.keyboard import KeyCode
 from pynput.mouse import Button
@@ -28,6 +29,7 @@ LABEL_WORK = None  # 显示是否开启程序
 LABEL_Y_NUMBER = None  # 显示下压的Y轴像素值
 PRESS_COUNT = 0  # 下压了多少次
 LABEL_PRESS_COUNT = None  # 显示下压了多少次
+EMPTY_BULLET = False  # 是否用完了子弹
 
 
 def press_gun():
@@ -35,6 +37,10 @@ def press_gun():
     while True:
         if not WORK:
             # print(f"开关状态:{WORK}, 无需压枪")
+            time.sleep(0.02)
+            continue
+        if EMPTY_BULLET:
+            # print(f"子弹用完了, 不压枪")
             time.sleep(0.02)
             continue
         # print(f"开关状态:{WORK}， 需要压枪")
@@ -54,6 +60,9 @@ def press_gun():
         for i in data:
             if not MOUSE_LEFT_DOWN:
                 # print("压枪过程中, 释放了鼠标左键, 不应该再压了")
+                break
+            if EMPTY_BULLET:
+                # print("压枪过程中, 子弹打完了")
                 break
             y_pixel = i[Y_PIXEL] + Y_NUMBER
             # y_pixel = Y_NUMBER
@@ -168,11 +177,11 @@ def mouse_click(x, y, button: Button, pressed):
     :param pressed: 按下或者是释放,按下是True释放是False
     :return:
     """
-    global MOUSE_LEFT_DOWN, LABEL_PRESS_COUNT,PRESS_COUNT
+    global MOUSE_LEFT_DOWN, LABEL_PRESS_COUNT, PRESS_COUNT
     if pressed and button == Button.left:
         # print("鼠标左键按下")
         MOUSE_LEFT_DOWN = True
-        PRESS_COUNT=0
+        PRESS_COUNT = 0
     elif not pressed and button == Button.left:
         # print("鼠标左键释放")
         MOUSE_LEFT_DOWN = False
@@ -199,12 +208,53 @@ def keyboard_press(key):
         os._exit(0)  # 强制所有线程都退出
 
 
+def screenshot(box=None):
+    if not box:
+        box = (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+    img = ImageGrab.grab(box)
+    return img
+
+
+def check_empty_bullet(img):
+    size = img.size
+    width = size[0]
+    height = size[1]
+    for i in range(width):
+        for j in range(height):
+            rgb = img.getpixel((i, j))
+            if rgb == (255, 0, 0):  # 如果像素点有红色,则认为子弹用完
+                return True
+    return False
+
+
+def is_bullet_empty():
+    global EMPTY_BULLET
+    box = (1257, 1312, 1302, 1359)  # 子弹数量的位置
+    while True:
+        if not WORK:
+            # print("未开始, 不需要截图")
+            time.sleep(0.02)
+            continue
+
+        img = screenshot(box)
+        # img.save(f'debug/{uuid.uuid4().hex}.png')
+        empty = check_empty_bullet(img)
+        if empty:
+            # print("子弹用完了")
+            EMPTY_BULLET = True
+        else:
+            # print("子弹没有用完")
+            EMPTY_BULLET = False
+        time.sleep(0.05)
+
+
 def main():
     executor = ThreadPoolExecutor(max_workers=5)
     load_usb()
 
     executor.submit(press_gun, )
     executor.submit(create_win, )
+    executor.submit(is_bullet_empty, )
 
     listener = mouse.Listener(on_click=mouse_click)
     listener.start()
@@ -215,6 +265,10 @@ def main():
     listener.join()
 
 
+def debug():
+    is_bullet_empty()
+
+
 if __name__ == '__main__':
     """
     小键盘1是总开关 开启了才会压枪
@@ -222,3 +276,4 @@ if __name__ == '__main__':
     小键盘+-加减号是控制下拉像素点 每次增加或减少像素1
     """
     main()
+    # debug()
