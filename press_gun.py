@@ -1,6 +1,5 @@
 import ctypes
 import os.path
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from tkinter import Tk, Label, Frame
@@ -10,6 +9,8 @@ import win32con
 from pynput import mouse, keyboard
 from pynput.keyboard import KeyCode
 from pynput.mouse import Button
+
+import scar
 
 SCREEN_WIDTH = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)  # 屏幕高度
 SCREEN_HEIGHT = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)  # 屏幕宽度
@@ -42,51 +43,13 @@ def press_gun():
             time.sleep(0.02)
             continue
         # print("按下了鼠标左键, 需要压枪")
-
-        PRESS_COUNT = 0
-        data1 = [
-            {Y_PIXEL: 11, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 11, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 10, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 10, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 10, TIME_SLEEP: 0.035},
-
-        ]
-        data2 = [
-            {Y_PIXEL: 10, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 11, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 11, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 11, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 11, TIME_SLEEP: 0.035},
-        ]
-        data3 = [
-            {Y_PIXEL: 13, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 13, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 14, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 14, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 14, TIME_SLEEP: 0.035},
-        ]
-        data4 = [
-            {Y_PIXEL: 15, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 17, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 17, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-        ]
-        data5 = [
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-        ]
-        data6 = [
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-            {Y_PIXEL: 16, TIME_SLEEP: 0.035},
-        ]
+        print(f"次数的下压册数:{PRESS_COUNT}")
+        data1 = scar.scar_data1
+        data2 = scar.scar_data2
+        data3 = scar.scar_data3
+        data4 = scar.scar_data4
+        data5 = scar.scar_data5
+        data6 = scar.scar_data6
         data = data1 + data2 + data3 + data4 + data5 + data6
         for i in data:
             if not MOUSE_LEFT_DOWN:
@@ -183,14 +146,14 @@ def load_usb():
         print('未检测到 USB 芯片!')
         print('未检测到 USB 芯片!')
         print('未检测到 USB 芯片!')
-        sys.exit(-1)
+        os._exit(0)
     HANDLER = ctypes.c_uint64(ret)
     result = LIB.M_ResolutionUsed(HANDLER, SCREEN_WIDTH, SCREEN_HEIGHT)
     if result != 0:
         print('设置分辨率失败!')
         print('设置分辨率失败!')
         print('设置分辨率失败!')
-        sys.exit(-1)
+        os._exit(0)
     print("加载USB成功!!!")
     print("加载USB成功!!!")
     print("加载USB成功!!!")
@@ -205,10 +168,11 @@ def mouse_click(x, y, button: Button, pressed):
     :param pressed: 按下或者是释放,按下是True释放是False
     :return:
     """
-    global MOUSE_LEFT_DOWN, LABEL_PRESS_COUNT
+    global MOUSE_LEFT_DOWN, LABEL_PRESS_COUNT,PRESS_COUNT
     if pressed and button == Button.left:
         # print("鼠标左键按下")
         MOUSE_LEFT_DOWN = True
+        PRESS_COUNT=0
     elif not pressed and button == Button.left:
         # print("鼠标左键释放")
         MOUSE_LEFT_DOWN = False
@@ -230,7 +194,7 @@ def keyboard_press(key):
     elif key == KeyCode.from_char('-'):
         Y_NUMBER -= 1
         # print(f"降低Y轴移动像素, 降低后:{Y_NUMBER}")
-        LABEL_Y_NUMBER.config(text=show_press_count())
+        LABEL_Y_NUMBER.config(text=show_press_pixel())
     elif hasattr(key, 'vk') and key.vk == 103:  # 小键盘7
         os._exit(0)  # 强制所有线程都退出
 
