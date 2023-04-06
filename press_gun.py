@@ -254,7 +254,7 @@ def main():
 
     executor.submit(press_gun, )
     executor.submit(create_win, )
-    executor.submit(is_bullet_empty, )
+    # executor.submit(is_bullet_empty, )
 
     listener = mouse.Listener(on_click=mouse_click)
     listener.start()
