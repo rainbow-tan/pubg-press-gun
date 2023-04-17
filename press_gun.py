@@ -1,6 +1,7 @@
 import ctypes
 import os.path
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from tkinter import Tk, Label, Frame
 
@@ -11,7 +12,7 @@ from pynput import mouse, keyboard
 from pynput.keyboard import KeyCode
 from pynput.mouse import Button
 
-import scar
+import berry
 
 SCREEN_WIDTH = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)  # 屏幕高度
 SCREEN_HEIGHT = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)  # 屏幕宽度
@@ -23,13 +24,15 @@ LIB = None  # 加载的DLL
 HANDLER = None  # 加载的句柄
 MOUSE_LEFT_DOWN = False  # 鼠标左键按下
 WORK = None  # 是否开启程序
-Y_NUMBER = 0  # 下压的Y轴像素值
+Y_NUMBER = 0 # 下压的Y轴像素值
+K=1#系数
 WIN = None  # tkinter界面
 LABEL_WORK = None  # 显示是否开启程序
 LABEL_Y_NUMBER = None  # 显示下压的Y轴像素值
 PRESS_COUNT = 0  # 下压了多少次
 LABEL_PRESS_COUNT = None  # 显示下压了多少次
 EMPTY_BULLET = False  # 是否用完了子弹
+LABEL_K=None
 
 
 def press_gun():
@@ -50,23 +53,27 @@ def press_gun():
             continue
         # print("按下了鼠标左键, 需要压枪")
         # print(f"次数的下压册数:{PRESS_COUNT}")
-        data1 = scar.scar_data1
-        data2 = scar.scar_data2
-        data3 = scar.scar_data3
-        data4 = scar.scar_data4
-        data5 = scar.scar_data5
-        data6 = scar.scar_data6
+        data1 = berry.scar_data1
+        data2 = berry.scar_data2
+        data3 = berry.scar_data3
+        data4 = berry.scar_data4
+        data5 = berry.scar_data5
+        data6 = berry.scar_data6
         data = data1 + data2 + data3 + data4 + data5 + data6
-        for i in data:
+        for index,value in enumerate(data):
             if not MOUSE_LEFT_DOWN:
                 # print("压枪过程中, 释放了鼠标左键, 不应该再压了")
                 break
             if EMPTY_BULLET:
                 # print("压枪过程中, 子弹打完了")
                 break
-            y_pixel = i[Y_PIXEL] + Y_NUMBER
-            # y_pixel = Y_NUMBER
-            sleep_second = i[TIME_SLEEP]
+            y_pixel = value[Y_PIXEL]
+            # if index>20:
+            y_pixel = y_pixel+Y_NUMBER
+            y_pixel=y_pixel*K
+            y_pixel=int(y_pixel)
+            sleep_second = value[TIME_SLEEP]
+
             LIB.M_MoveR2(HANDLER, 0, y_pixel)
             time.sleep(sleep_second)
             PRESS_COUNT += 1
@@ -85,9 +92,12 @@ def show_press_pixel():
     # return f'压枪像素(+,-):{Y_NUMBER}'
     return f'压枪像素:{Y_NUMBER}'
 
+def show_k():
+    # return f'压枪像素(+,-):{Y_NUMBER}'
+    return f'系数:{K}'
 
 def pack_components():
-    global WIN, LABEL_WORK, LABEL_Y_NUMBER, LABEL_PRESS_COUNT
+    global WIN, LABEL_WORK, LABEL_Y_NUMBER, LABEL_PRESS_COUNT,LABEL_K
     bg = 'yellow'
     fg = 'red'
 
@@ -124,11 +134,20 @@ def pack_components():
     )
     LABEL_PRESS_COUNT.pack(side=side)
 
+    LABEL_K = Label(
+        master=frame,  # 父容器
+        text=show_k(),  # 文本
+        bg=bg,  # 背景颜色
+        fg=fg,  # 文本颜色
+        font=(font_name, font_size, font_choose),
+    )
+    LABEL_K.pack(side=side)
+
 
 def create_win():
     global WIN
     WIN = Tk()
-    width = 500  # tkinter宽度
+    width = 550  # tkinter宽度
     distance_middle = 500  # 中间偏右多少
     x = int((SCREEN_WIDTH - width) / 2) + distance_middle
     WIN.geometry(f'{width}x30+{x}+0')  # 设置宽度300,高度300,距离左上角x轴距离为500,y轴距离为100
@@ -189,7 +208,13 @@ def mouse_click(x, y, button: Button, pressed):
 
 
 def keyboard_press(key):
-    global WORK, LABEL_WORK, Y_NUMBER, PRESS_COUNT
+    """
+    蹲着0.83系数
+
+    :param key:
+    :return:
+    """
+    global WORK, LABEL_WORK, Y_NUMBER, PRESS_COUNT,K,LABEL_K
     if hasattr(key, 'vk') and key.vk == 97:  # 小键盘1
         WORK = not WORK
         LABEL_WORK.config(text=show_work())
@@ -197,13 +222,26 @@ def keyboard_press(key):
             PRESS_COUNT = 0
             LABEL_PRESS_COUNT.config(text=show_press_count())
     elif key == KeyCode.from_char('+'):
+        return # todo 暂时不用该功能
         Y_NUMBER += 1
         # print(f"增加Y轴移动像素, 增加后:{Y_NUMBER}")
         LABEL_Y_NUMBER.config(text=show_press_pixel())
     elif key == KeyCode.from_char('-'):
+        return # todo 暂时不用该功能
         Y_NUMBER -= 1
         # print(f"降低Y轴移动像素, 降低后:{Y_NUMBER}")
         LABEL_Y_NUMBER.config(text=show_press_pixel())
+    elif hasattr(key, 'vk') and key.vk == 105:  # 小键盘9
+        K+=0.01
+        K=round(K,2)
+        LABEL_K.config(text=show_k())
+    elif hasattr(key, 'vk') and key.vk == 102:  # 小键盘6
+        if K <= 0.1:
+            return
+        K-=0.01
+        K=round(K, 2)
+        LABEL_K.config(text=show_k())
+
     elif hasattr(key, 'vk') and key.vk == 103:  # 小键盘7
         os._exit(0)  # 强制所有线程都退出
 
@@ -237,7 +275,7 @@ def is_bullet_empty():
             continue
 
         img = screenshot(box)
-        # img.save(f'debug/{uuid.uuid4().hex}.png')
+        img.save(f'debug/{uuid.uuid4().hex}.png')
         empty = check_empty_bullet(img)
         if empty:
             # print("子弹用完了")
