@@ -5,9 +5,10 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from tkinter import Tk, Label, Frame
 
+import dxcam
 import win32api
 import win32con
-from PIL import ImageGrab
+from PIL import ImageGrab, Image
 from pynput import mouse, keyboard
 from pynput.keyboard import KeyCode
 from pynput.mouse import Button
@@ -23,7 +24,7 @@ TIME_SLEEP = "TIME_SLEEP"
 LIB = None  # 加载的DLL
 HANDLER = None  # 加载的句柄
 MOUSE_LEFT_DOWN = False  # 鼠标左键按下
-WORK = None  # 是否开启程序
+SWITCH = None  # 是否开启程序
 Y_NUMBER = 0  # 下压的Y轴像素值
 K = 1  # 系数
 WIN = None  # tkinter界面
@@ -33,20 +34,20 @@ PRESS_COUNT = 0  # 下压了多少次
 LABEL_PRESS_COUNT = None  # 显示下压了多少次
 EMPTY_BULLET = False  # 是否用完了子弹
 LABEL_K = None
-
+CM_zd=None#监测子弹
 
 def press_gun():
-    global LIB, HANDLER, WORK, PRESS_COUNT, LABEL_PRESS_COUNT
+    global LIB, HANDLER, SWITCH, PRESS_COUNT, LABEL_PRESS_COUNT
     while True:
-        if not WORK:
-            # print(f"开关状态:{WORK}, 无需压枪")
+        if not SWITCH:
+            # print(f"开关状态:{SWITCH}, 无需压枪")
             time.sleep(0.02)
             continue
         if EMPTY_BULLET:
             # print(f"子弹用完了, 不压枪")
             time.sleep(0.02)
             continue
-        # print(f"开关状态:{WORK}， 需要压枪")
+        # print(f"开关状态:{SWITCH}， 需要压枪")
         if not MOUSE_LEFT_DOWN:
             # print("未按下鼠标左键, 无需压枪")
             time.sleep(0.02)
@@ -81,7 +82,7 @@ def press_gun():
 
 def show_work():
     # return f'开启状态(1):{"开启" if WORK else "关闭"}'
-    return f'开启状态:{"开启" if WORK else "关闭"}'
+    return f'开启状态:{"开启" if SWITCH else "关闭"}'
 
 
 def show_press_count():
@@ -174,18 +175,12 @@ def load_usb():
     ret = LIB.M_Open(1)
     if ret in [-1, 18446744073709551615]:
         print('未检测到 USB 芯片!')
-        print('未检测到 USB 芯片!')
-        print('未检测到 USB 芯片!')
         os._exit(0)
     HANDLER = ctypes.c_uint64(ret)
     result = LIB.M_ResolutionUsed(HANDLER, SCREEN_WIDTH, SCREEN_HEIGHT)
     if result != 0:
         print('设置分辨率失败!')
-        print('设置分辨率失败!')
-        print('设置分辨率失败!')
         os._exit(0)
-    print("加载USB成功!!!")
-    print("加载USB成功!!!")
     print("加载USB成功!!!")
 
 
@@ -216,11 +211,11 @@ def keyboard_press(key):
     :param key:
     :return:
     """
-    global WORK, LABEL_WORK, Y_NUMBER, PRESS_COUNT, K, LABEL_K
+    global SWITCH, LABEL_WORK, Y_NUMBER, PRESS_COUNT, K, LABEL_K
     if hasattr(key, 'vk') and key.vk == 97:  # 小键盘1
-        WORK = not WORK
+        SWITCH = not SWITCH
         LABEL_WORK.config(text=show_work())
-        if not WORK:
+        if not SWITCH:
             PRESS_COUNT = 0
             LABEL_PRESS_COUNT.config(text=show_press_count())
     elif key == KeyCode.from_char('+'):
@@ -267,34 +262,25 @@ def check_empty_bullet(img):
     return False
 
 
-def is_bullet_empty():
-    global EMPTY_BULLET
-    box = (1257, 1312, 1302, 1359)  # 子弹数量的位置
-    while True:
-        if not WORK:
-            # print("未开始, 不需要截图")
-            time.sleep(0.02)
-            continue
 
-        img = screenshot(box)
-        img.save(f'debug/{uuid.uuid4().hex}.png')
-        empty = check_empty_bullet(img)
-        if empty:
-            # print("子弹用完了")
-            EMPTY_BULLET = True
-        else:
-            # print("子弹没有用完")
-            EMPTY_BULLET = False
-        time.sleep(0.05)
+def start_CM():
+    global CM_zd,EMPTY_BULLET
+    CM_zd = dxcam.create()
+    box = (1257, 1312, 1302, 1359)
+    CM_zd.start(region=box)
+    print("启动了监测子弹线程")
+
 
 
 def main():
-    executor = ThreadPoolExecutor(max_workers=5)
+    executor = ThreadPoolExecutor(max_workers=10)
     load_usb()
 
     executor.submit(press_gun, )
     executor.submit(create_win, )
-    # executor.submit(is_bullet_empty, )
+
+    executor.submit(start_CM, )
+    executor.submit(is_bullet_empty, )
 
     listener = mouse.Listener(on_click=mouse_click)
     listener.start()
@@ -305,8 +291,32 @@ def main():
     listener.join()
 
 
-def debug():
-    is_bullet_empty()
+def get_pixel(img: Image.Image):
+    # rgb(255, 0, 0)
+    size = img.size
+    width = size[0]
+    height = size[1]
+    for i in range(width):
+        for j in range(height):
+            rgb = img.getpixel((i, j))
+            if rgb == (255, 0, 0):
+                return True
+    return False
+def is_bullet_empty():
+    global EMPTY_BULLET
+    t=0.06
+    while True:
+        if SWITCH and  MOUSE_LEFT_DOWN:
+            frame = CM_zd.get_latest_frame()
+            if get_pixel(Image.fromarray(frame)):
+                EMPTY_BULLET=True
+                time.sleep(3)#等待换子弹
+                EMPTY_BULLET=False
+            else:
+                time.sleep(t)
+        else:
+            time.sleep(t)
+
 
 
 if __name__ == '__main__':
@@ -314,6 +324,6 @@ if __name__ == '__main__':
     小键盘1是总开关 开启了才会压枪
     小键盘7是关闭整个程序 关闭了就整个退出了
     小键盘+-加减号是控制下拉像素点 每次增加或减少像素1
+    小键盘96加减号是控制比例系数 每次增加或减少0.01
     """
     main()
-    # debug()
