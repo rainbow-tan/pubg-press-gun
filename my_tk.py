@@ -3,7 +3,7 @@ from tkinter import Tk, Label, StringVar
 from common import SCREEN_WIDTH
 
 win = Tk()
-width = 800  # tkinter宽度
+width = 1600  # tkinter宽度
 height = 30  # tk的高度
 distance_middle = 500  # 中间偏右多少
 alpha = 0.5  # 设置透明度,数值是0-1之间的小数,包含0和1
@@ -18,6 +18,8 @@ TEXT_press_count = StringVar()
 TEXT_base_k = StringVar()
 TEXT_gun_head = StringVar()
 TEXT_auto_identify = StringVar()
+TEXT_gun_grip= StringVar()
+TEXT_gun_tail= StringVar()
 
 
 def create_win():
@@ -39,6 +41,8 @@ def create_label():
     Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_base_k).pack(side='left')
     Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_gun_head).pack(side='left')
     Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_auto_identify).pack(side='left')
+    Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_gun_grip).pack(side='left')
+    Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_gun_tail).pack(side='left')
 
 
 if __name__ == '__main__':

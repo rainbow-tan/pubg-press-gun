@@ -10,8 +10,9 @@ from pynput.keyboard import KeyCode, Key
 from pynput.mouse import Button
 
 from img_utils import second_value_img_by_filename, d_hash, cmp_hash
-from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win
-from parts_utils import GunHead, GunHeadHashLike, GUN_HEAD_POINT
+from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail
+from parts_utils import GunHead, GunHeadHashLike, GUN_HEAD_POINT, GunGrip, GunGripHashLike, GUN_GRIP_POINT, \
+    GunTailHashLike, GunTail, GUN_TAIL_POINT
 
 
 class MyGun:
@@ -26,9 +27,14 @@ class MyGun:
 
     def show_gun_head(self):
         return f"枪头:{self.gun_head}({self.gun_head_sim})"
+    def show_gun_grip(self):
+        return f"握把:{self.gun_grip}({self.gun_grip_sim})"
+    def show_gun_tail(self):
+        return f"尾巴:{self.gun_tail}({self.gun_tail_sim})"
 
     # ——————————————————————————————————————————————————————————————————
     def __init__(self):
+
 
         self.threshold = 40
         self.mouse_listener = mouse.Listener(on_click=self.mouse_click)
@@ -43,6 +49,15 @@ class MyGun:
         self.gun_head = None
         self.gun_head_sim = 0
         self.head_limit_like = 0.9
+        self.grip_limit_like = 0.9
+        self.tail_limit_like = 0.9
+        self.gun_grip = None
+        self.gun_tail= None
+        self.gun_grip_sim = 0
+        self.gun_tail_sim = 0
+        self.gun_head_k=0
+        self.gun_grip_k=0
+        self.gun_tail_k=0
 
         ############################
         self.left_mouse_down = False
@@ -54,12 +69,16 @@ class MyGun:
 
         self.init_text()
         self.src_heads = self.get_gun_head_d_hash()
+        self.src_grip = self.get_gun_grip_d_hash()
+        self.src_tail= self.get_gun_tail_d_hash()
 
     def init_text(self):
         TEXT_switch.set(self.show_switch())
         TEXT_press_count.set(self.show_press_count())
         TEXT_base_k.set(self.show_base_k())
         TEXT_gun_head.set(self.show_gun_head())
+        TEXT_gun_grip.set(self.show_gun_grip())
+        TEXT_gun_tail.set(self.show_gun_tail())
 
     def mouse_click(self, x, y, button, pressed):
         if pressed and button == Button.left:
@@ -85,7 +104,18 @@ class MyGun:
 
                 self.gun_head = None
                 self.gun_head_sim = 0
+                self.gun_head_k=0
                 TEXT_gun_head.set(self.show_gun_head())
+
+                self.gun_grip=None
+                self.gun_grip_sim=0
+                self.gun_grip_k=0
+                TEXT_gun_grip.set(self.show_gun_grip())
+
+                self.gun_tail = None
+                self.gun_tail_sim = 0
+                self.gun_tail_k = 0
+                TEXT_gun_tail.set(self.show_gun_tail())
 
                 self.k = self.base_k
                 TEXT_base_k.set(self.show_base_k())
@@ -130,12 +160,50 @@ class MyGun:
             if like >= self.head_limit_like:
                 self.gun_head = i
                 self.gun_head_sim = like
-                self.k = round(self.base_k - i.k, 2)
+                self.gun_head_k=i.k
+                # self.k = round(self.k - i.k, 2)
                 TEXT_gun_head.set(self.show_gun_head())
-                TEXT_base_k.set(self.show_base_k())
+                # TEXT_base_k.set(self.show_base_k())
                 return
 
+    def re_gun_grip(self, img_big):
+        img_head = img_big.crop(GUN_GRIP_POINT)
+        name = "img_grip.png"
+        name2 = "img_grip_second_value.png"
+        img_head.save(name)
+        second_value_img_by_filename(name, name2, self.threshold)
 
+        value = d_hash(cv2.imread(name2), self.shape)
+        # print(f"握把的hash:{value}")
+        for i in self.src_grip:
+            like = cmp_hash(i.hash_value, value)
+            print(f"{i} -> {like}")
+            if like >= self.grip_limit_like:
+                self.gun_grip = i
+                self.gun_grip_sim = like
+                self.gun_grip_k=i.k
+                # self.k = round(self.k - i.k, 2)
+                TEXT_gun_grip.set(self.show_gun_grip())
+                # TEXT_base_k.set(self.show_base_k())
+                return
+    def re_gun_tail(self, img_big):
+        img_head = img_big.crop(GUN_TAIL_POINT)
+        name = "img_tail.png"
+        name2 = "img_tail_second_value.png"
+        img_head.save(name)
+        second_value_img_by_filename(name, name2, self.threshold)
+
+        value = d_hash(cv2.imread(name2), self.shape)
+        # print(f"握把的hash:{value}")
+        for i in self.src_tail:
+            like = cmp_hash(i.hash_value, value)
+            print(f"{i} -> {like}")
+            if like >= self.tail_limit_like:
+                self.gun_tail = i
+                self.gun_tail_sim = like
+                self.gun_tail_k=i.k
+                TEXT_gun_tail.set(self.show_gun_tail())
+                return
     def start_camera(self):
         self.camera.start()
         while True:
@@ -149,7 +217,11 @@ class MyGun:
                 frame = self.camera.get_latest_frame()
                 img_big = Image.fromarray(frame)
                 self.re_gun_head(img_big)
+                self.re_gun_grip(img_big)
+                self.re_gun_tail(img_big)
 
+                self.k=round(self.base_k-self.gun_head_k-self.gun_grip_k-self.gun_tail_k,2)
+                TEXT_base_k.set(self.show_base_k())
 
                 self.tab_down = False
                 print("完成识别配件信息")
@@ -175,6 +247,46 @@ class MyGun:
             heads.append(GunHeadHashLike(head.name, head.k, value, 0))
         print("获取枪口hash完成")
         return heads
+
+    def get_gun_grip_d_hash(self):
+        threshold = self.threshold
+
+        data = [dict(path='parts/woba/chuizhi.png', head=GunGrip("垂直", 0.15)),
+                dict(path='parts/woba/hongwo.png', head=GunGrip("红握",0.08 )),
+                dict(path='parts/woba/jiguang.png', head=GunGrip("激光", 0)),
+                dict(path='parts/woba/muzhi.png', head=GunGrip("拇指", 0.08)),
+                dict(path='parts/woba/qinxing.png', head=GunGrip("轻型", 0)),
+                dict(path='parts/woba/sanjiao.png', head=GunGrip("三角", 0)),
+                ]
+        parts = []
+        for one in data:
+            path = one['path']
+            des = "src_woba.png"
+            second_value_img_by_filename(path, des, threshold)
+            # print(type(img_pl))
+            # img_cv = cv2.cvtColor(np.asarray(img_pl), cv2.COLOR_RGB2BGR)
+            value = d_hash(cv2.imread(des), self.shape)
+            # print(f"{os.path.basename(path)}的hash是:{value}")
+            head = one['head']
+            parts.append(GunGripHashLike(head.name, head.k, value, 0))
+        print("获取握把hash完成")
+        return parts
+    def get_gun_tail_d_hash(self):
+        threshold = self.threshold
+
+        data = [dict(path='parts/pigu/putong.png', head=GunTail("普通", 0.05)),
+                dict(path='parts/pigu/zhongxing.png', head=GunTail("重型",0.05 )),
+                ]
+        parts = []
+        for one in data:
+            path = one['path']
+            des = "src_pigu.png"
+            second_value_img_by_filename(path, des, threshold)
+            value = d_hash(cv2.imread(des), self.shape)
+            head = one['head']
+            parts.append(GunTailHashLike(head.name, head.k, value, 0))
+        print("获取屁股hash完成")
+        return parts
 
 
 def main():
