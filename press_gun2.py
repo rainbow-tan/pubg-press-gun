@@ -9,6 +9,7 @@ import win32api
 import win32con
 import win32gui
 import win32ui
+from PIL import Image
 from pynput import mouse, keyboard
 from pynput.keyboard import KeyCode, Key
 from pynput.mouse import Button
@@ -182,6 +183,19 @@ class MyGun:
         except Exception as e:
             print('截图失败,失败原因:{}'.format(e))
 
+    @staticmethod
+    def to_model_1(src, threshold=30):
+        img = Image.open(src)
+        img_2 = img.convert("L")
+        table = []
+        for i in range(256):  # 自定义灰度界限，大于这个值为黑色，小于这个值为白色
+            if i < threshold:
+                table.append(0)
+            else:
+                table.append(1)
+        img_3 = img_2.point(table, "1")  # 图片二值化 使用table来设置二值化的规则
+        img_3.save(src)
+
     def check_parts(self):
         while True:
             if not self.switch:
@@ -197,9 +211,12 @@ class MyGun:
                              self.parts_qiangtou + self.parts_width,
                              self.parts_start_y + self.parts_height,
                              filename)
+            self.to_model_1(filename)
             # qt=Parts(None,None,None,None)
             max_s=0
             for src in self.src_qiantous:
+                f="qiangout/q.png"
+                self.to_model_1(src.path)
                 ret = self.a_hash(filename, src.path)
                 if ret>max_s:
                     max_s=ret
@@ -321,7 +338,7 @@ def main():
 
     my.create_win()
     my.pack_components()
-    executor.submit(my.check_parts)
+    # executor.submit(my.check_parts)
     executor.submit(my.start_listen_mouse_keyboard)
     my.start_win()
 
