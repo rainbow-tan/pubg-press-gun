@@ -61,3 +61,11 @@ def d_hash(img, shape=(10, 10)):
             else:
                 hash_str = hash_str + '0'
     return hash_str
+
+def pk_zishi(l,l2):
+    count=0
+    for i in range(len(l)):
+        if l[i]==l2[i]:
+            count+=1
+
+    return round(count/len(l),3)

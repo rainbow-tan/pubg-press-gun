@@ -9,10 +9,12 @@ from pynput import mouse, keyboard
 from pynput.keyboard import KeyCode, Key
 from pynput.mouse import Button
 
-from img_utils import second_value_img_by_filename, d_hash, cmp_hash
-from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail
+from get_pixel import get_all_pixel
+from img_utils import second_value_img_by_filename, d_hash, cmp_hash, pk_zishi
+from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail, \
+    TEXT_zishi
 from parts_utils import GunHead, GunHeadHashLike, GUN_HEAD_POINT, GunGrip, GunGripHashLike, GUN_GRIP_POINT, \
-    GunTailHashLike, GunTail, GUN_TAIL_POINT
+    GunTailHashLike, GunTail, GUN_TAIL_POINT, ZISHI_POINT, ZiShi, ZiShiHashLike
 
 
 class MyGun:
@@ -31,12 +33,16 @@ class MyGun:
         return f"握把:{self.gun_grip}({self.gun_grip_sim})"
     def show_gun_tail(self):
         return f"尾巴:{self.gun_tail}({self.gun_tail_sim})"
+    def show_zishi(self):
+        return f"姿势:{self.zishi}({self.zishi_sim})"
 
     # ——————————————————————————————————————————————————————————————————
     def __init__(self):
 
 
+        self.threshold_zishi = 200
         self.threshold = 40
+
         self.mouse_listener = mouse.Listener(on_click=self.mouse_click)
         self.keyboard_listener = keyboard.Listener(on_press=self.keyboard_press)
         self.camera = dxcam.create()
@@ -51,13 +57,17 @@ class MyGun:
         self.head_limit_like = 0.9
         self.grip_limit_like = 0.9
         self.tail_limit_like = 0.9
+        self.zishi_limit_like = 0.9
         self.gun_grip = None
         self.gun_tail= None
+        self.zishi= None
         self.gun_grip_sim = 0
+        self.zishi_sim = 0
         self.gun_tail_sim = 0
         self.gun_head_k=0
         self.gun_grip_k=0
         self.gun_tail_k=0
+        self.zishi_k=0
 
         ############################
         self.left_mouse_down = False
@@ -71,6 +81,7 @@ class MyGun:
         self.src_heads = self.get_gun_head_d_hash()
         self.src_grip = self.get_gun_grip_d_hash()
         self.src_tail= self.get_gun_tail_d_hash()
+        self.src_zishi= self.get_zishi_d_hash()
 
     def init_text(self):
         TEXT_switch.set(self.show_switch())
@@ -79,6 +90,7 @@ class MyGun:
         TEXT_gun_head.set(self.show_gun_head())
         TEXT_gun_grip.set(self.show_gun_grip())
         TEXT_gun_tail.set(self.show_gun_tail())
+        TEXT_zishi.set(self.show_zishi())
 
     def mouse_click(self, x, y, button, pressed):
         if pressed and button == Button.left:
@@ -116,6 +128,11 @@ class MyGun:
                 self.gun_tail_sim = 0
                 self.gun_tail_k = 0
                 TEXT_gun_tail.set(self.show_gun_tail())
+
+                self.zishi = None
+                self.zishi_sim = 0
+                self.zishi_k = 0
+                TEXT_zishi.set(self.show_zishi())
 
                 self.k = self.base_k
                 TEXT_base_k.set(self.show_base_k())
@@ -204,6 +221,24 @@ class MyGun:
                 self.gun_tail_k=i.k
                 TEXT_gun_tail.set(self.show_gun_tail())
                 return
+
+    def re_zishi(self, img_big):
+        img_head = img_big.crop(ZISHI_POINT)
+        name = "img_zishi.png"
+        name2 = "img_zishi_second_value.png"
+        img_head.save(name)
+        second_value_img_by_filename(name, name2, self.threshold_zishi)
+        for i in self.src_zishi:
+            like = pk_zishi(get_all_pixel(name2),i.hash_value)
+            print(f"{i.name}--{like}")
+            if like >= self.zishi_limit_like:
+                self.zishi = i
+                self.zishi_sim = like
+                self.zishi_k = i.k
+                TEXT_zishi.set(self.show_zishi())
+                return True
+        return False
+
     def start_camera(self):
         self.camera.start()
         while True:
@@ -219,14 +254,37 @@ class MyGun:
                 self.re_gun_head(img_big)
                 self.re_gun_grip(img_big)
                 self.re_gun_tail(img_big)
+                # self.re_zishi(img_big)
 
                 self.k=round(self.base_k-self.gun_head_k-self.gun_grip_k-self.gun_tail_k,2)
                 TEXT_base_k.set(self.show_base_k())
 
                 self.tab_down = False
                 print("完成识别配件信息")
+            elif self.left_mouse_down:
+                while True:
+                    print("需要识别姿势了！！！")
+                    frame = self.camera.get_latest_frame()
+                    img_big = Image.fromarray(frame)
+                    ok=self.re_zishi(img_big)
+                    if ok:
+                        print("站姿识别匹配")
+                    else:
+                        print("站姿识别不匹配")
+                    self.k = round(self.base_k - self.gun_head_k - self.gun_grip_k - self.gun_tail_k-self.zishi_k, 2)
+                    TEXT_base_k.set(self.show_base_k())
+                    if not self.left_mouse_down:
+                        print("不需要识别姿势了")
+                        break
+                    else:
+                        time.sleep(self.sleep_time)
+
+
+
             else:
                 time.sleep(self.sleep_time)
+
+
 
     def get_gun_head_d_hash(self):
         threshold = self.threshold
@@ -288,6 +346,23 @@ class MyGun:
         print("获取屁股hash完成")
         return parts
 
+    def get_zishi_d_hash(self):
+        threshold = self.threshold_zishi
+
+        data = [dict(path='parts/zishi/zhan.png', head=ZiShi("站", 0)),
+                dict(path='parts/zishi/dun.png', head=ZiShi("蹲", 0.17)),
+                dict(path='parts/zishi/pa.png', head=ZiShi("趴", 0)),
+                ]
+        parts = []
+        for one in data:
+            path = one['path']
+            des = "src_zishi.png"
+            second_value_img_by_filename(path, des, threshold)
+            value = get_all_pixel(des)
+            head = one['head']
+            parts.append(ZiShiHashLike(head.name, head.k, value, 0))
+        print("获取姿势hash完成")
+        return parts
 
 def main():
     executor = ThreadPoolExecutor(5)

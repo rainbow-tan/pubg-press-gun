@@ -20,6 +20,7 @@ TEXT_gun_head = StringVar()
 TEXT_auto_identify = StringVar()
 TEXT_gun_grip= StringVar()
 TEXT_gun_tail= StringVar()
+TEXT_zishi= StringVar()
 
 
 def create_win():
@@ -43,6 +44,7 @@ def create_label():
     Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_auto_identify).pack(side='left')
     Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_gun_grip).pack(side='left')
     Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_gun_tail).pack(side='left')
+    Label(master=win, bg=bg, fg=fg, font=(font_name, font_size, font_choose), textvariable=TEXT_zishi).pack(side='left')
 
 
 if __name__ == '__main__':
