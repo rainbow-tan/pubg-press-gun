@@ -50,3 +50,7 @@ scar_data6 = [
     {Y_PIXEL: y_6, TIME_SLEEP: SLEEP_TIME},
     {Y_PIXEL: y_6, TIME_SLEEP: SLEEP_TIME},
 ]
+a=[]
+for i in scar_data1+scar_data2+scar_data3+scar_data4+scar_data5+scar_data6:
+    a.append(i[Y_PIXEL])
+print(a)

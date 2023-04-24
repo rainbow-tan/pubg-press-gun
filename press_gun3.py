@@ -1,3 +1,5 @@
+import ctypes
+import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -9,6 +11,7 @@ from pynput import mouse, keyboard
 from pynput.keyboard import KeyCode, Key
 from pynput.mouse import Button
 
+from common import Gun, SCREEN_WIDTH, SCREEN_HEIGHT
 from get_pixel import get_all_pixel
 from img_utils import second_value_img_by_filename, d_hash, cmp_hash, pk_zishi
 from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail, \
@@ -42,6 +45,8 @@ class MyGun:
 
         self.threshold_zishi = 200
         self.threshold = 40
+
+        self.lib,self.handler = self.load_usb()
 
         self.mouse_listener = mouse.Listener(on_click=self.mouse_click)
         self.keyboard_listener = keyboard.Listener(on_press=self.keyboard_press)
@@ -77,11 +82,42 @@ class MyGun:
         self.sleep_time = 0.05
         self.shape = (10, 10)
 
+        self.gun_json_name = "berry"
+
         self.init_text()
         self.src_heads = self.get_gun_head_d_hash()
         self.src_grip = self.get_gun_grip_d_hash()
         self.src_tail= self.get_gun_tail_d_hash()
         self.src_zishi= self.get_zishi_d_hash()
+
+
+        self.gun_data=self.load_data_by_name()
+
+    def load_usb(self):
+        # global LIB, HANDLER
+        path = "box64.dll"
+        path = os.path.join(os.path.dirname(__file__), path)
+        lib = ctypes.windll.LoadLibrary(path)
+
+        lib.M_Open.restype = ctypes.c_uint64
+        ret = lib.M_Open(1)
+        if ret in [-1, 18446744073709551615]:
+            print('未检测到 USB 芯片!')
+            os._exit(0)
+        handler = ctypes.c_uint64(ret)
+        result = lib.M_ResolutionUsed(handler, SCREEN_WIDTH, SCREEN_HEIGHT)
+        if result != 0:
+            print('设置分辨率失败!')
+            os._exit(0)
+        print("加载USB成功!!!")
+        return lib,handler
+    def load_data_by_name(self):
+        with open(f"{self.gun_json_name}.json") as f:
+            data = json.load(f)
+        gun=Gun(self.gun_json_name,data['time'],data['press'])
+        print(f"加载枪械数据完成:{gun}")
+        return gun
+
 
     def init_text(self):
         TEXT_switch.set(self.show_switch())
@@ -230,8 +266,8 @@ class MyGun:
         second_value_img_by_filename(name, name2, self.threshold_zishi)
         for i in self.src_zishi:
             like = pk_zishi(get_all_pixel(name2),i.hash_value)
-            print(f"{i.name}--{like}")
-            if like >= self.zishi_limit_like:
+            # print(f"{i.name}--{like}")
+            if like >= self.zishi_limit_7like:
                 self.zishi = i
                 self.zishi_sim = like
                 self.zishi_k = i.k
@@ -263,18 +299,18 @@ class MyGun:
                 print("完成识别配件信息")
             elif self.left_mouse_down:
                 while True:
-                    print("需要识别姿势了！！！")
+                    # print("需要识别姿势了！！！")
                     frame = self.camera.get_latest_frame()
                     img_big = Image.fromarray(frame)
                     ok=self.re_zishi(img_big)
-                    if ok:
-                        print("站姿识别匹配")
-                    else:
-                        print("站姿识别不匹配")
+                    # if ok:
+                    #     print("站姿识别匹配")
+                    # else:
+                    #     print("站姿识别不匹配")
                     self.k = round(self.base_k - self.gun_head_k - self.gun_grip_k - self.gun_tail_k-self.zishi_k, 2)
                     TEXT_base_k.set(self.show_base_k())
                     if not self.left_mouse_down:
-                        print("不需要识别姿势了")
+                        # print("不需要识别姿势了")
                         break
                     else:
                         time.sleep(self.sleep_time)
@@ -364,11 +400,55 @@ class MyGun:
         print("获取姿势hash完成")
         return parts
 
+    def yaqiang(self):
+        while True:
+            if not self.switch:
+                # print(f"开关状态:{SWITCH}, 无需压枪")
+                time.sleep(self.sleep_time)
+                continue
+            # if EMPTY_BULLET:
+            #     # print(f"子弹用完了, 不压枪")
+            #     time.sleep(0.02)
+            #     continue
+            # print(f"开关状态:{SWITCH}， 需要压枪")
+            if not self.left_mouse_down:
+                # print("未按下鼠标左键, 无需压枪")
+                time.sleep(self.sleep_time)
+                continue
+            # print("按下了鼠标左键, 需要压枪")
+            # print(f"次数的下压册数:{PRESS_COUNT}")
+            data = self.gun_data.s
+            # data1 = berry.scar_data1
+            # data2 = berry.scar_data2
+            # data3 = berry.scar_data3
+            # data4 = berry.scar_data4
+            # data5 = berry.scar_data5
+            # data6 = berry.scar_data6
+            # data = data1 + data2 + data3 + data4 + data5 + data6
+            for index, value in enumerate(data):
+                if not self.left_mouse_down:
+                    # print("压枪过程中, 释放了鼠标左键, 不应该再压了")
+                    break
+                # if EMPTY_BULLET:
+                #     print("压枪过程中, 子弹打完了")
+                    # break
+                y_pixel = value
+                # if index>20:
+                # y_pixel = y_pixel + Y_NUMBER
+                # y_pixel = y_pixel * K
+                # y_pixel = int(y_pixel)
+                y = int(y_pixel*self.k)
+                # sleep_second = value[TIME_SLEEP]
+                print(f"y:{y}")
+                self.lib.M_MoveR2(self.handler, 0, y)
+                time.sleep(self.gun_data.t)
+                self.press_count += 1
 def main():
     executor = ThreadPoolExecutor(5)
     my = MyGun()
     executor.submit(my.start_listener)
     executor.submit(my.start_camera)
+    executor.submit(my.yaqiang)
     create_win()
 
 
