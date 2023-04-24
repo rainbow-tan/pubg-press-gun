@@ -136,6 +136,7 @@ class MyGun:
         elif not pressed and button == Button.left:
             # print("鼠标左键释放")
             self.left_mouse_down = False
+            TEXT_press_count.set(self.show_press_count())
 
     def keyboard_press(self, key):
         """
@@ -267,7 +268,7 @@ class MyGun:
         for i in self.src_zishi:
             like = pk_zishi(get_all_pixel(name2),i.hash_value)
             # print(f"{i.name}--{like}")
-            if like >= self.zishi_limit_7like:
+            if like >= self.zishi_limit_like:
                 self.zishi = i
                 self.zishi_sim = like
                 self.zishi_k = i.k
@@ -299,18 +300,18 @@ class MyGun:
                 print("完成识别配件信息")
             elif self.left_mouse_down:
                 while True:
-                    # print("需要识别姿势了！！！")
+                    print("需要识别姿势了！！！")
                     frame = self.camera.get_latest_frame()
                     img_big = Image.fromarray(frame)
                     ok=self.re_zishi(img_big)
-                    # if ok:
-                    #     print("站姿识别匹配")
-                    # else:
-                    #     print("站姿识别不匹配")
+                    if ok:
+                        print("站姿识别匹配")
+                    else:
+                        print("站姿识别不匹配")
                     self.k = round(self.base_k - self.gun_head_k - self.gun_grip_k - self.gun_tail_k-self.zishi_k, 2)
                     TEXT_base_k.set(self.show_base_k())
                     if not self.left_mouse_down:
-                        # print("不需要识别姿势了")
+                        print("不需要识别姿势了")
                         break
                     else:
                         time.sleep(self.sleep_time)
@@ -432,17 +433,19 @@ class MyGun:
                 # if EMPTY_BULLET:
                 #     print("压枪过程中, 子弹打完了")
                     # break
+                time.sleep(self.gun_data.t)
                 y_pixel = value
                 # if index>20:
                 # y_pixel = y_pixel + Y_NUMBER
                 # y_pixel = y_pixel * K
                 # y_pixel = int(y_pixel)
                 y = int(y_pixel*self.k)
+                y = y_pixel
                 # sleep_second = value[TIME_SLEEP]
-                print(f"y:{y}")
+                # print(f"y:{y}")
                 self.lib.M_MoveR2(self.handler, 0, y)
-                time.sleep(self.gun_data.t)
                 self.press_count += 1
+
 def main():
     executor = ThreadPoolExecutor(5)
     my = MyGun()
