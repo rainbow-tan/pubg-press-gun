@@ -12,7 +12,7 @@ from pynput.keyboard import KeyCode, Key
 from pynput.mouse import Button
 
 from common import Gun, SCREEN_WIDTH, SCREEN_HEIGHT
-from get_pixel import get_all_pixel
+from get_pixel import get_second_img_pixel
 from img_utils import second_value_img_by_filename, d_hash, cmp_hash, pk_zishi
 from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail, \
     TEXT_zishi
@@ -96,7 +96,7 @@ class MyGun:
 
     def load_usb(self):
         # global LIB, HANDLER
-        path = "box64.dll"
+        path = "dll/box64.dll"
         path = os.path.join(os.path.dirname(__file__), path)
         lib = ctypes.windll.LoadLibrary(path)
 
@@ -267,7 +267,7 @@ class MyGun:
         img_head.save(name)
         second_value_img_by_filename(name, name2, self.threshold_zishi)
         for i in self.src_zishi:
-            like = pk_zishi(get_all_pixel(name2),i.hash_value)
+            like = pk_zishi(get_second_img_pixel(name2), i.hash_value)
             # print(f"{i.name}--{like}")
             if like >= self.zishi_limit_like:
                 self.zishi = i
@@ -418,7 +418,7 @@ class MyGun:
             path = one['path']
             des = "src_zishi.png"
             second_value_img_by_filename(path, des, threshold)
-            value = get_all_pixel(des)
+            value = get_second_img_pixel(des)
             head = one['head']
             parts.append(ZiShiHashLike(head.name, head.k, value, 0))
         print("获取姿势hash完成")
@@ -441,7 +441,7 @@ class MyGun:
                 continue
             # print("按下了鼠标左键, 需要压枪")
             # print(f"次数的下压册数:{PRESS_COUNT}")
-            data = self.gun_data.s
+            data = self.gun_data.fire_rate
             # data1 = berry.scar_data1
             # data2 = berry.scar_data2
             # data3 = berry.scar_data3
@@ -461,7 +461,7 @@ class MyGun:
                 # if EMPTY_BULLET:
                 #     print("压枪过程中, 子弹打完了")
                     # break
-                time.sleep(self.gun_data.t)
+                time.sleep(self.gun_data.y_axis_pixels)
                 y_pixel = value
                 # if index>20:
                 # y_pixel = y_pixel + Y_NUMBER

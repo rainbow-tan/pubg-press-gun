@@ -1,12 +1,8 @@
 from PIL import Image
 
 
-def get_all_pixel(file):
-    """
-    获取所有的像素点的颜色
-    :param file:
-    :return:
-    """
+def get_second_img_pixel(file:str):
+    #获取二值图片的像素列表 二值图片像素是0和255
     img = Image.open(file)
     width = img.size[0]
     height = img.size[1]
@@ -14,8 +10,6 @@ def get_all_pixel(file):
     for x in range(width):
         for y in range(height):
             pixel = img.getpixel((x, y))
-            # print(f"{x},{y} -----> {pixel}")
-            # ret.append(dict(x=x, y=y, pixel=pixel))
             if pixel==255:
                 pixel=1
             ret.append(pixel)
