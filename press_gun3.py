@@ -17,7 +17,7 @@ from img_utils import second_value_img_by_filename, d_hash, cmp_hash, pk_zishi
 from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail, \
     TEXT_zishi
 from parts_utils import GunHead, GunHeadHashLike, GUN_HEAD_POINT, GunGrip, GunGripHashLike, GUN_GRIP_POINT, \
-    GunTailHashLike, GunTail, GUN_TAIL_POINT, ZISHI_POINT, ZiShi, ZiShiHashLike
+    GunTailHashLike, GunTail, GUN_TAIL_POINT, ZISHI_POINT, ZiShi, ZiShiHashLike, ZIDAN_POINT
 
 
 class MyGun:
@@ -43,6 +43,7 @@ class MyGun:
     def __init__(self):
 
 
+        self.zidankong = False
         self.threshold_zishi = 200
         self.threshold = 40
 
@@ -275,6 +276,21 @@ class MyGun:
                 TEXT_zishi.set(self.show_zishi())
                 return True
         return False
+    def re_zidan_empty(self,img_big:Image.Image):
+        print("识别子弹是否空")
+
+        img = img_big.crop(ZIDAN_POINT)
+        img.save('zidan_empty.png')
+
+        size = img.size
+        width = size[0]
+        height = size[1]
+        for i in range(width):
+            for j in range(height):
+                rgb = img.getpixel((i, j))
+                if rgb == (255, 0, 0):  # 如果像素点有红色,则认为子弹用完
+                    return True
+        return False
 
     def start_camera(self):
         self.camera.start()
@@ -310,11 +326,18 @@ class MyGun:
                         print("站姿识别不匹配")
                     self.k = round(self.base_k - self.gun_head_k - self.gun_grip_k - self.gun_tail_k-self.zishi_k, 2)
                     TEXT_base_k.set(self.show_base_k())
+
+                    if self.re_zidan_empty(img_big):#识别子弹空
+                        print("指点打空了")
+                        self.zidankong=True
+
+
                     if not self.left_mouse_down:
                         print("不需要识别姿势了")
                         break
                     else:
                         time.sleep(self.sleep_time)
+
 
 
 
@@ -430,6 +453,11 @@ class MyGun:
                 if not self.left_mouse_down:
                     # print("压枪过程中, 释放了鼠标左键, 不应该再压了")
                     break
+                if self.zidankong:
+                    time.sleep(2)
+                    self.zidankong=False
+                    break
+
                 # if EMPTY_BULLET:
                 #     print("压枪过程中, 子弹打完了")
                     # break
