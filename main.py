@@ -83,7 +83,7 @@ class MyGun:
         self.sleep_time = 0.05
         self.shape = (10, 10)
 
-        self.gun_json_name = "berry"
+        self.gun_json_name = "m4a1"
 
         self.init_text()
         self.src_heads = self.get_gun_head_d_hash()
@@ -113,9 +113,9 @@ class MyGun:
         print("加载USB成功!!!")
         return lib,handler
     def load_data_by_name(self):
-        with open(f"{self.gun_json_name}.json") as f:
+        with open(f"press_gun_data/{self.gun_json_name}.json") as f:
             data = json.load(f)
-        gun=Gun(self.gun_json_name,data['time'],data['press'])
+        gun=Gun(self.gun_json_name,data['fire_rate'],data['y_axis_pixels'])
         print(f"加载枪械数据完成:{gun}")
         return gun
 
@@ -442,6 +442,7 @@ class MyGun:
             # print("按下了鼠标左键, 需要压枪")
             # print(f"次数的下压册数:{PRESS_COUNT}")
             data = self.gun_data.fire_rate
+            print(f"data:{data}")
             # data1 = berry.scar_data1
             # data2 = berry.scar_data2
             # data3 = berry.scar_data3
