@@ -7,7 +7,7 @@ SCREEN_HEIGHT = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)  # 屏幕高度
 print(f"屏幕分辨率高度:{SCREEN_HEIGHT}")
 
 class Gun:
-    def __init__(self, name, y_axis_pixels, fire_rate):
+    def __init__(self, name:str, y_axis_pixels:list[int], fire_rate:float):
         self.name = name
         self.y_axis_pixels = y_axis_pixels
         self.fire_rate = fire_rate

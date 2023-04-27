@@ -13,7 +13,7 @@ from pynput.mouse import Button
 
 from common import Gun, SCREEN_WIDTH, SCREEN_HEIGHT
 from get_pixel import get_second_img_pixel
-from img_utils import second_value_img_by_filename, d_hash, cmp_hash, pk_zishi
+from img_utils import second_value_img_by_filename, d_hash, cmp_hash, recognize_postures
 from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail, \
     TEXT_gesture
 from parts_utils import GunHead, GunHeadHashLike, GUN_HEAD_POINT, GunGrip, GunGripHashLike, GUN_GRIP_POINT, \
@@ -267,7 +267,7 @@ class MyGun:
         img_head.save(name)
         second_value_img_by_filename(name, name2, self.threshold_zishi)
         for i in self.src_zishi:
-            like = pk_zishi(get_second_img_pixel(name2), i.hash_value)
+            like = recognize_postures(get_second_img_pixel(name2), i.hash_value)
             # print(f"{i.name}--{like}")
             if like >= self.zishi_limit_like:
                 self.zishi = i

@@ -4,7 +4,7 @@ import cv2
 from PIL import Image
 
 
-def second_value_img_by_filename(src, des, threshold=150):
+def second_value_img_by_filename(src:str, des:str, threshold=150):
     src = os.path.abspath(src)
     des = os.path.abspath(des)
     img = Image.open(src)
@@ -24,7 +24,7 @@ def second_value_img_by_filename(src, des, threshold=150):
     img_3.save(des)
     # print(f"二值化图像完成, src:{src}, des:{des}")
 
-def second_value_img_memory(img:Image.Image, threshold=150):
+def second_value_img_memory(img:Image.Image, threshold:int=150):
     # 自定义灰度界限，大于这个值为黑色，小于这个值为白色
     table = []
     for i in range(256):
@@ -33,7 +33,7 @@ def second_value_img_memory(img:Image.Image, threshold=150):
         else:
             table.append(1)
     return img.convert("L").point(table, "1")  # 图片二值化 使用table来设置二值化的规则
-def cmp_hash(hash1, hash2, shape=(10, 10)):
+def cmp_hash(hash1:str, hash2:str, shape=(10, 10)):
     n = 0
     # hash长度不同则返回-1代表传参出错
     if len(hash1) != len(hash2):
@@ -62,10 +62,10 @@ def d_hash(img, shape=(10, 10)):
                 hash_str = hash_str + '0'
     return hash_str
 
-def pk_zishi(l,l2):
+def recognize_postures(l:list[int], l2:list[int]):
+    #比较姿势 通过二值化图像的像素比较
     count=0
     for i in range(len(l)):
         if l[i]==l2[i]:
             count+=1
-
     return round(count/len(l),3)
