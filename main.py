@@ -15,9 +15,9 @@ from common import Gun, SCREEN_WIDTH, SCREEN_HEIGHT
 from get_pixel import get_second_img_pixel
 from img_utils import second_value_img_by_filename, d_hash, cmp_hash, pk_zishi
 from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, create_win, TEXT_gun_grip, TEXT_gun_tail, \
-    TEXT_zishi
+    TEXT_gesture
 from parts_utils import GunHead, GunHeadHashLike, GUN_HEAD_POINT, GunGrip, GunGripHashLike, GUN_GRIP_POINT, \
-    GunTailHashLike, GunTail, GUN_TAIL_POINT, ZISHI_POINT, ZiShi, ZiShiHashLike, ZIDAN_POINT
+    GunTailHashLike, GunTail, GUN_TAIL_POINT, GESTURE_POINT, ZiShi, ZiShiHashLike, BULLET_POINT
 
 
 class MyGun:
@@ -127,7 +127,7 @@ class MyGun:
         TEXT_gun_head.set(self.show_gun_head())
         TEXT_gun_grip.set(self.show_gun_grip())
         TEXT_gun_tail.set(self.show_gun_tail())
-        TEXT_zishi.set(self.show_zishi())
+        TEXT_gesture.set(self.show_zishi())
 
     def mouse_click(self, x, y, button, pressed):
         if pressed and button == Button.left:
@@ -170,7 +170,7 @@ class MyGun:
                 self.zishi = None
                 self.zishi_sim = 0
                 self.zishi_k = 0
-                TEXT_zishi.set(self.show_zishi())
+                TEXT_gesture.set(self.show_zishi())
 
                 self.k = self.base_k
                 TEXT_base_k.set(self.show_base_k())
@@ -261,7 +261,7 @@ class MyGun:
                 return
 
     def re_zishi(self, img_big):
-        img_head = img_big.crop(ZISHI_POINT)
+        img_head = img_big.crop(GESTURE_POINT)
         name = "img_zishi.png"
         name2 = "img_zishi_second_value.png"
         img_head.save(name)
@@ -273,13 +273,13 @@ class MyGun:
                 self.zishi = i
                 self.zishi_sim = like
                 self.zishi_k = i.k
-                TEXT_zishi.set(self.show_zishi())
+                TEXT_gesture.set(self.show_zishi())
                 return True
         return False
     def re_zidan_empty(self,img_big:Image.Image):
         print("识别子弹是否空")
 
-        img = img_big.crop(ZIDAN_POINT)
+        img = img_big.crop(BULLET_POINT)
         img.save('zidan_empty.png')
 
         size = img.size

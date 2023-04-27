@@ -1,7 +1,7 @@
 from PIL import Image
 
 
-def get_second_img_pixel(file:str):
+def get_second_img_pixel(file:str)->list[int]:
     #获取二值图片的像素列表 二值图片像素是0和255
     img = Image.open(file)
     width = img.size[0]
