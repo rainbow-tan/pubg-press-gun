@@ -116,7 +116,7 @@ class MyGun:
     def load_data_by_name(self):
         with open(f"press_gun_data/{self.gun_json_name}.json") as f:
             data = json.load(f)
-        gun=Gun(self.gun_json_name,data['fire_rate'],data['y_axis_pixels'])
+        gun=Gun(self.gun_json_name,data['y_axis_pixels'],data['fire_rate'])
         print(f"加载枪械数据完成:{gun}")
         return gun
 
@@ -483,7 +483,7 @@ class MyGun:
                 self.lib.M_MoveR2(self.handler, 0, y)
                 self.press_count += 1
 
-IS_DEBUG = False# todo 是否是测试
+IS_DEBUG = True# todo 是否是测试
 if IS_DEBUG:
     print("!!!!!!!!调试模式!!!!!!!!")
     print("!!!!!!!!调试模式!!!!!!!!")
