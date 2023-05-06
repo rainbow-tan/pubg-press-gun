@@ -145,6 +145,10 @@ class MyGun:
         蹲着0.83系数
         """
         add_k = 0.01
+        if IS_DEBUG:
+            add_k=1
+
+
         if hasattr(key, 'vk') and key.vk == 97:  # 小键盘1
             # print("按下了小键盘1")
             self.switch = not self.switch
@@ -442,7 +446,7 @@ class MyGun:
                 continue
             # print("按下了鼠标左键, 需要压枪")
             # print(f"次数的下压册数:{PRESS_COUNT}")
-            data = self.gun_data.fire_rate
+            data = self.gun_data.y_axis_pixels
             print(f"data:{data}")
             # data1 = berry.scar_data1
             # data2 = berry.scar_data2
@@ -451,6 +455,7 @@ class MyGun:
             # data5 = berry.scar_data5
             # data6 = berry.scar_data6
             # data = data1 + data2 + data3 + data4 + data5 + data6
+
             for index, value in enumerate(data):
                 if not self.left_mouse_down:
                     # print("压枪过程中, 释放了鼠标左键, 不应该再压了")
@@ -463,18 +468,26 @@ class MyGun:
                 # if EMPTY_BULLET:
                 #     print("压枪过程中, 子弹打完了")
                     # break
-                time.sleep(self.gun_data.y_axis_pixels)
+                time.sleep(self.gun_data.fire_rate)
                 y_pixel = value
                 # if index>20:
                 # y_pixel = y_pixel + Y_NUMBER
                 # y_pixel = y_pixel * K
                 # y_pixel = int(y_pixel)
                 y = int(y_pixel*self.k)
-                y = y_pixel
+                # y = y_pixel
                 # sleep_second = value[TIME_SLEEP]
                 # print(f"y:{y}")
+                if IS_DEBUG:
+                    y = self.base_k+value
                 self.lib.M_MoveR2(self.handler, 0, y)
                 self.press_count += 1
+
+IS_DEBUG = False# todo 是否是测试
+if IS_DEBUG:
+    print("!!!!!!!!调试模式!!!!!!!!")
+    print("!!!!!!!!调试模式!!!!!!!!")
+    print("!!!!!!!!调试模式!!!!!!!!")
 
 def main():
     if os.path.exists(TMP_FOLDER_NAME):
