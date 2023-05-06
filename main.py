@@ -1,6 +1,7 @@
 import ctypes
 import json
 import os
+import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -19,7 +20,7 @@ from my_tk import TEXT_switch, TEXT_press_count, TEXT_base_k, TEXT_gun_head, cre
 from parts_utils import GunHead, GunHeadHashLike, GUN_HEAD_POINT, GunGrip, GunGripHashLike, GUN_GRIP_POINT, \
     GunTailHashLike, GunTail, GUN_TAIL_POINT, GESTURE_POINT, ZiShi, ZiShiHashLike, BULLET_POINT
 
-
+TMP_FOLDER_NAME = 'TMP'
 class MyGun:
     def show_switch(self):
         return f"开关:{'开启' if self.switch else '关闭'}"
@@ -202,8 +203,8 @@ class MyGun:
 
     def re_gun_head(self, img_big):
         img_head = img_big.crop(GUN_HEAD_POINT)
-        name = "img_head.png"
-        name2 = "img_head_second_value.png"
+        name = f"{TMP_FOLDER_NAME}/img_head.png"
+        name2 = f"{TMP_FOLDER_NAME}/img_head_second_value.png"
         img_head.save(name)
         second_value_img_by_filename(name, name2, self.threshold)
 
@@ -223,8 +224,8 @@ class MyGun:
 
     def re_gun_grip(self, img_big):
         img_head = img_big.crop(GUN_GRIP_POINT)
-        name = "img_grip.png"
-        name2 = "img_grip_second_value.png"
+        name = f"{TMP_FOLDER_NAME}/img_grip.png"
+        name2 = f"{TMP_FOLDER_NAME}/img_grip_second_value.png"
         img_head.save(name)
         second_value_img_by_filename(name, name2, self.threshold)
 
@@ -243,8 +244,8 @@ class MyGun:
                 return
     def re_gun_tail(self, img_big):
         img_head = img_big.crop(GUN_TAIL_POINT)
-        name = "img_tail.png"
-        name2 = "img_tail_second_value.png"
+        name = f"{TMP_FOLDER_NAME}/img_tail.png"
+        name2 = f"{TMP_FOLDER_NAME}/img_tail_second_value.png"
         img_head.save(name)
         second_value_img_by_filename(name, name2, self.threshold)
 
@@ -262,8 +263,8 @@ class MyGun:
 
     def re_zishi(self, img_big):
         img_head = img_big.crop(GESTURE_POINT)
-        name = "img_zishi.png"
-        name2 = "img_zishi_second_value.png"
+        name = f"{TMP_FOLDER_NAME}/img_zishi.png"
+        name2 = f"{TMP_FOLDER_NAME}/img_zishi_second_value.png"
         img_head.save(name)
         second_value_img_by_filename(name, name2, self.threshold_zishi)
         for i in self.src_zishi:
@@ -280,7 +281,7 @@ class MyGun:
         print("识别子弹是否空")
 
         img = img_big.crop(BULLET_POINT)
-        img.save('zidan_empty.png')
+        img.save('f{TMP_FOLDER_NAME}/zidan_empty.png')
 
         size = img.size
         width = size[0]
@@ -355,7 +356,7 @@ class MyGun:
         heads = []
         for one in data:
             path = one['path']
-            des = "src_head.png"
+            des = f"{TMP_FOLDER_NAME}/src_head.png"
             second_value_img_by_filename(path, des, threshold)
             # print(type(img_pl))
             # img_cv = cv2.cvtColor(np.asarray(img_pl), cv2.COLOR_RGB2BGR)
@@ -379,7 +380,7 @@ class MyGun:
         parts = []
         for one in data:
             path = one['path']
-            des = "src_woba.png"
+            des = f"{TMP_FOLDER_NAME}/src_woba.png"
             second_value_img_by_filename(path, des, threshold)
             # print(type(img_pl))
             # img_cv = cv2.cvtColor(np.asarray(img_pl), cv2.COLOR_RGB2BGR)
@@ -398,7 +399,7 @@ class MyGun:
         parts = []
         for one in data:
             path = one['path']
-            des = "src_pigu.png"
+            des = f"{TMP_FOLDER_NAME}/src_pigu.png"
             second_value_img_by_filename(path, des, threshold)
             value = d_hash(cv2.imread(des), self.shape)
             head = one['head']
@@ -416,7 +417,7 @@ class MyGun:
         parts = []
         for one in data:
             path = one['path']
-            des = "src_zishi.png"
+            des = f"{TMP_FOLDER_NAME}/src_zishi.png"
             second_value_img_by_filename(path, des, threshold)
             value = get_second_img_pixel(des)
             head = one['head']
@@ -476,6 +477,12 @@ class MyGun:
                 self.press_count += 1
 
 def main():
+    if os.path.exists(TMP_FOLDER_NAME):
+        shutil.rmtree(TMP_FOLDER_NAME)
+    if not os.path.exists(TMP_FOLDER_NAME):
+        os.makedirs(TMP_FOLDER_NAME)
+
+
     executor = ThreadPoolExecutor(5)
     my = MyGun()
     executor.submit(my.start_listener)
